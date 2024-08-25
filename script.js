@@ -14,7 +14,7 @@ class Lift {
     constructor(liftId, liftElement){
         this.liftId = liftId;
         this.liftElement = liftElement;
-        this.currentFloor = null;
+        this.currentFloor = 0;
         this.direction = null;
         this.moving = false;
     }
@@ -23,13 +23,12 @@ class Lift {
         assignedLift.moving = true;
         const liftElement = assignedLift.liftElement;
 
-        const mainPageDiv = document.getElementById('mainpagediv');
-        const allFloors = mainPageDiv.querySelectorAll('.subelements');
+        const liftSimulation = document.getElementById('liftSimulation');
+        const allFloors = liftSimulation.querySelectorAll('.floorings');
         const targetFloor = allFloors[floorNumber];
 
-        const liftRect = liftElement.getBoundingClientRect();
         const targetFloorRect = targetFloor.getBoundingClientRect();
-        const mainPageRect = mainPageDiv.getBoundingClientRect();
+        const mainPageRect = liftSimulation.getBoundingClientRect();
 
         const transformVal = targetFloorRect.top - mainPageRect.top;
 
@@ -61,7 +60,8 @@ class Lift {
                     assignedLift.moving = false;
                     if(RequestQueue.length > 0){
                         const nextRequest = RequestQueue.shift();
-                        assignLiftToFloor(nextRequest.floorNumber, nextRequest.direction);
+                        console.log(nextRequest.floorNumber, nextRequest.buttondirection);  
+                        assignLiftToFloor(nextRequest.floorNumber,nextRequest.buttondirection); 
                     }
                 }, 2600);
             }, 2600)
@@ -100,13 +100,13 @@ class Lift {
 
 const floors = [];
 const lifts = [];
-const RequestQueue = [];
+var RequestQueue = [];
 
 for(var i=numFloors-1 ; i>=0 ; i--){
     if(i==0){
         const newDiv = document.createElement('div');
 
-        newDiv.className = 'subelements';
+        newDiv.className = 'floorings';
         newDiv.innerHTML = `
             <div class="floorname floor0">Floor ${i}</div>
             <div class="buttons">
@@ -129,22 +129,23 @@ for(var i=numFloors-1 ; i>=0 ; i--){
         }
         floors[i]=new Floor(i);
 
-        document.getElementById('mainpagediv').appendChild(newDiv);  
+        document.getElementById('liftSimulation').appendChild(newDiv);  
     }else if(i==numFloors-1){
         const newDiv = document.createElement('div');
 
-        newDiv.className = 'subelements';
+        newDiv.className = 'floorings';
         newDiv.innerHTML = `
             <div class="floorname floor${i}">Floor ${i}</div>
             <div class="buttons">
                 <button class="downbutton" onclick="assignLiftToFloor(${i}, 'down')">Down</button><br>
             </div>
         `
-        document.getElementById('mainpagediv').appendChild(newDiv);
+        floors[i]=new Floor(i);
+        document.getElementById('liftSimulation').appendChild(newDiv);
     }else{
         const newDiv = document.createElement('div');
 
-        newDiv.className = 'subelements';
+        newDiv.className = 'floorings';
         newDiv.innerHTML = `
             <div class="floorname floor${i}">Floor ${i}</div>
             <div class="buttons">
@@ -153,100 +154,86 @@ for(var i=numFloors-1 ; i>=0 ; i--){
             </div>
         `
         floors[i]=new Floor(i);
-        document.getElementById('mainpagediv').appendChild(newDiv);
+        document.getElementById('liftSimulation').appendChild(newDiv);
     }
 }
 
 function assignLiftToFloor(floorNumber, buttondirection){
+
+    //console.log(floorNumber, buttondirection, typeof buttondirection);
     
     let buttonSelector;
-    if(buttondirection === 'up'){
+    if(buttondirection =='up'){
+        //console.log("Button direction is up");
         buttonSelector = `.upbutton[onclick*="assignLiftToFloor(${floorNumber}, 'up')"]`;
-    }else if(buttondirection === 'down'){
+    }else if(buttondirection == 'down'){
+        //console.log("Button direction is down");
         buttonSelector = `.downbutton[onclick*="assignLiftToFloor(${floorNumber}, 'down')"]`;
     }
     
+    //console.log("Floor number is : "+floorNumber);
+    //console.log("Button selector is : "+buttonSelector);
+
     const button = document.querySelector(buttonSelector);
 
-    console.log("Button is : "+button);
+    // console.log("Button is : "+button);
 
     let availableLift = lifts.find(lift => lift.currentFloor === floorNumber &&lift.direction === buttondirection);
 
-    console.log("Available lift is : "+availableLift);
+    //console.log("Available lift is : "+availableLift);
 
     if(availableLift !== undefined){
         openDoorsOnly(floorNumber, buttondirection);
     }else{
-        console.log(lifts);
+        //console.log(lifts);
         var availablelift = lifts.find(lift => lift.currentFloor === null);
-        console.log("Available lift is : "+availablelift);
-        if(availablelift){
+        //console.log("Available lift is : "+availablelift);
 
-            const currentFloor = availablelift.currentFloor;
-            const floorDifference = Math.abs(currentFloor - floorNumber);
-            const duration = floorDifference * 2;
-            availablelift.currentFloor = floorNumber;
-            availablelift.direction = buttondirection;
 
-            floors[floorNumber].lift = availablelift;
-            button.disabled = true;
+        let nearestLiftDistance = Infinity
+        let nearestLift = null
 
-            setTimeout(() => {
-                button.disabled = false;
-            }, duration * 1000);
-
-            openLiftDoor(floorNumber, duration);
-        }else{
-
-            let nearestLiftDistance = Infinity
-            let nearestLift = null
-
-            for(const lift of lifts){
-                if(!lift.moving && lift.currentFloor !== null){
-                    const distance = Math.abs(lift.currentFloor - floorNumber)
-                    if(distance < nearestLiftDistance){
-                        nearestLiftDistance = distance
-                        nearestLift = lift
-                    }
+        for(const lift of lifts){
+            if(!lift.moving && lift.currentFloor !== null){
+                const distance = Math.abs(lift.currentFloor - floorNumber)
+                if(distance < nearestLiftDistance){
+                    nearestLiftDistance = distance
+                    nearestLift = lift
                 }
             }
-
-            if(nearestLift){
-                availablelift = nearestLift
-                const currentFloor = availablelift.currentFloor
-                const floorDifference = Math.abs(currentFloor - floorNumber)
-                const duration = floorDifference * 2
-                availablelift.currentFloor = floorNumber
-                floors[floorNumber].lift = availablelift
-                button.disabled = true
-
-                setTimeout(() => {
-                    button.disabled = false
-                }, duration * 1000)
-                openLiftDoor(floorNumber, duration)
-            }else{
-                button.disabled = true
-                RequestQueue.push({floorNumber, buttondirection})
-            }    
         }
+
+        if(nearestLift){
+            availablelift = nearestLift
+            const currentFloor = availablelift.currentFloor
+            const floorDifference = Math.abs(currentFloor - floorNumber)
+            const duration = floorDifference * 2
+            availablelift.currentFloor = floorNumber
+            floors[floorNumber].lift = availablelift
+            button.disabled = true
+
+            setTimeout(() => {
+                button.disabled = false
+            }, (duration+5) * 1000)
+            openLiftDoor(floorNumber, duration)
+        }else{
+            button.disabled = true
+            console.log(`${floorNumber}, ${buttondirection} is added to the queue`);
+            console.log(typeof buttondirection);
+            RequestQueue.push({ floorNumber, buttondirection });
+            console.log(RequestQueue[0]);
+            
+        }    
+        
     }
 }
 
 
 function openLiftDoor(floorNumber,duration){
-    console.log("open lift door being called");
     const assignedLift = floors[floorNumber].lift; 
-    console.log(floors)
-    console.log(lifts)
-    console.log("Assigned lift is :"+assignedLift);
-    console.log("Assigned lift element in openliftdoor function is : "+assignedLift.element);
     if (assignedLift) {
       assignedLift.moveToFloor(assignedLift,floorNumber,duration);
     }
-   else {
-    console.log("No lift assigned to floor", floorNumber);
-  }
-   
 }
 
 function openDoorsOnly(floorNumber,buttondirection)
@@ -256,3 +243,6 @@ function openDoorsOnly(floorNumber,buttondirection)
     assignedLift.openDoorAnim(assignedLift,floorNumber);
   }
 }
+
+
+
