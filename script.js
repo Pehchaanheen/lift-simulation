@@ -159,35 +159,22 @@ for(var i=numFloors-1 ; i>=0 ; i--){
 }
 
 function assignLiftToFloor(floorNumber, buttondirection){
-
-    //console.log(floorNumber, buttondirection, typeof buttondirection);
     
     let buttonSelector;
     if(buttondirection =='up'){
-        //console.log("Button direction is up");
         buttonSelector = `.upbutton[onclick*="assignLiftToFloor(${floorNumber}, 'up')"]`;
     }else if(buttondirection == 'down'){
-        //console.log("Button direction is down");
         buttonSelector = `.downbutton[onclick*="assignLiftToFloor(${floorNumber}, 'down')"]`;
     }
-    
-    //console.log("Floor number is : "+floorNumber);
-    //console.log("Button selector is : "+buttonSelector);
 
     const button = document.querySelector(buttonSelector);
 
-    // console.log("Button is : "+button);
-
     let availableLift = lifts.find(lift => lift.currentFloor === floorNumber &&lift.direction === buttondirection);
-
-    //console.log("Available lift is : "+availableLift);
 
     if(availableLift !== undefined){
         openDoorsOnly(floorNumber, buttondirection);
     }else{
-        //console.log(lifts);
         var availablelift = lifts.find(lift => lift.currentFloor === null);
-        //console.log("Available lift is : "+availablelift);
 
 
         let nearestLiftDistance = Infinity
@@ -221,13 +208,10 @@ function assignLiftToFloor(floorNumber, buttondirection){
             console.log(`${floorNumber}, ${buttondirection} is added to the queue`);
             console.log(typeof buttondirection);
             RequestQueue.push({ floorNumber, buttondirection });
-            console.log(RequestQueue[0]);
-            
+            console.log(RequestQueue[0]);   
         }    
-        
     }
 }
-
 
 function openLiftDoor(floorNumber,duration){
     const assignedLift = floors[floorNumber].lift; 
@@ -243,6 +227,3 @@ function openDoorsOnly(floorNumber,buttondirection)
     assignedLift.openDoorAnim(assignedLift,floorNumber);
   }
 }
-
-
-
